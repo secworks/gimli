@@ -1,6 +1,6 @@
 # gimli
 
-Hardware implememtation of the Gimli cryptographic primitive
+Hardware implememtation of the Gimli cryptographic permutation rimitive.
 
 
 ## Status
@@ -11,7 +11,7 @@ Just started. Not completed. Does not work.
 
 ## Introduction
 
-[Gimli (pdd](https://gimli.cr.yp.to/gimli-20170627.pdf) is a a
+[Gimli (pdf)](https://gimli.cr.yp.to/gimli-20170627.pdf) is a a
 cross-platform permutation that can be used to implement block ciphers,
 tweakable block ciphers, stream ciphers, message-authentication codes,
 authenticated ciphers, hash functions, etc.
