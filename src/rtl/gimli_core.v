@@ -49,19 +49,39 @@ module gimli_core(
 
                    input wire [383 : 0]  block,
 
-                   output wire           ready,
-                   output wire [383 : 0] new_block
+                   output wire [383 : 0] new_block,
+                   output wire           ready
                   );
 
 
   //----------------------------------------------------------------
   // Internal constant and parameter definitions.
   //----------------------------------------------------------------
+  localparam CTRL_IDLE = 0;
+  localparam CTRL_INIT = 1;
+  localparam CTRL_DONE = 15;
 
 
   //----------------------------------------------------------------
   // Registers including update variables and write enable.
   //----------------------------------------------------------------
+  reg [383 : 0] block_reg;
+  reg [383 : 0] block_new;
+  reg           block_we;
+
+  reg [4 : 0] round_ctr_reg;
+  reg [4 : 0] round_ctr_new;
+  reg         round_ctr_inc;
+  reg         round_ctr_rst;
+  reg         round_ctr_we;
+
+  reg         ready_reg;
+  reg         ready_new;
+  reg         ready_we;
+
+  reg [3 : 0] gimli_ctrl_reg;
+  reg [3 : 0] gimli_ctrl_new;
+  reg         gimli_ctrl_we;
 
 
   //----------------------------------------------------------------
@@ -70,31 +90,62 @@ module gimli_core(
 
 
   //----------------------------------------------------------------
-  // Module instantiantions.
-  //----------------------------------------------------------------
-
-
-  //----------------------------------------------------------------
   // Concurrent connectivity for ports etc.
   //----------------------------------------------------------------
-  assign ready     = 1'h1;
-  assign new_block = block;
+  assign ready     = ready_reg;
+  assign new_block = block_reg;
 
 
   //----------------------------------------------------------------
   // reg_update
-  // Update functionality for all registers in the core.
-  // All registers are positive edge triggered with asynchronous
-  // active low reset. All registers have write enable.
   //----------------------------------------------------------------
   always @ (posedge clk)
     begin : reg_update
       if (!reset_n) begin
-        end
+	ready_reg      <= 1'h1;
+	block_reg      <= 384'h0;
+	round_ctr_reg  <= 5'h0;
+	gimli_ctrl_reg <= CTRL_IDLE;
+      end
 
       else begin
+	if (ready_we) begin
+	  ready_reg <= ready_new;
+	end
+
+	if (block_we) begin
+	  block_reg <= block_new;
+	end
+
+	if (round_ctr_we) begin
+	  round_ctr_reg <= round_ctr_new;
+	end
+
+	if (gimli_ctrl_we) begin
+	  gimli_ctrl_reg <= gimli_ctrl_new;
+	end
       end
     end // reg_update
+
+
+  //----------------------------------------------------------------
+  // round_ctr
+  //----------------------------------------------------------------
+  always @*
+    begin : round_ctr
+      round_ctr_new = 5'h0;
+      round_ctr_we  = 1'h0;
+
+      if (round_ctr_inc) begin
+	round_ctr_new = round_ctr_reg + 1'h1;
+	round_ctr_we  = 1'h1;
+      end
+
+      else if (round_ctr_rst) begin
+	round_ctr_new = 5'h0;
+	round_ctr_we  = 1'h1;
+      end
+    end
 
 
   //----------------------------------------------------------------
@@ -102,6 +153,46 @@ module gimli_core(
   //----------------------------------------------------------------
   always @*
     begin : gimli_ctrl_fsm
+      ready_new      = 1'h0;
+      ready_we       = 1'h0;
+      block_we       = 1'h0;
+      round_ctr_inc  = 1'h0;
+      round_ctr_rst  = 1'h0;
+      gimli_ctrl_new = CTRL_IDLE;
+      gimli_ctrl_we  = 1'h0;
+
+      block_new = block;
+
+      case (gimli_ctrl_ref)
+	CTRL_IDLE: begin
+	  if (init) begin
+	    ready_new      = 1'h0;
+	    ready_we       = 1'h1;
+	    gimli_ctrl_new = CTRL_INIT;
+	    gimli_ctrl_we  = 1'h1;
+	  end
+	end
+
+
+	CTRL_INIT: begin
+	  block_we       = 1'h1;
+	  gimli_ctrl_new = CTRL_DONE;
+	  gimli_ctrl_we  = 1'h1;
+	end
+
+
+	CTRL_DONE: begin
+	  ready_new      = 1'h1;
+	  ready_we       = 1'h1;
+	  gimli_ctrl_new = CTRL_IDLE;
+	  gimli_ctrl_we  = 1'h1;
+	end
+
+
+	default: begin
+	end
+      endcase // case (gimli_ctrl_ref)
+
 
     end // gimli_ctrl_fsm
 
