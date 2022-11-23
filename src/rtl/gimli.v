@@ -65,7 +65,6 @@ module gimli(
   localparam ADDR_CTRL        = 8'h08;
   localparam CTRL_INIT_BIT    = 0;
   localparam CTRL_NEXT_BIT    = 1;
-  localparam CTRL_MODE_BIT    = 2;
 
   localparam ADDR_STATUS      = 8'h09;
   localparam STATUS_READY_BIT = 0;
@@ -74,7 +73,7 @@ module gimli(
   localparam ADDR_BLOCK11     = 8'h1b;
 
   localparam ADDR_NEW_BLOCK0  = 8'h20;
-  localparam ADDR_NEW_BLOKC11 = 8'h2b;
+  localparam ADDR_NEW_BLOCK11 = 8'h2b;
 
   localparam CORE_NAME0       = 32'h67696d6c; // "giml"
   localparam CORE_NAME1       = 32'h69202020; // "i   "
@@ -89,10 +88,6 @@ module gimli(
 
   reg next_reg;
   reg next_new;
-
-  reg mode_reg;
-  reg mode_new;
-  reg mode_we;
 
   reg ready_reg;
 
@@ -132,13 +127,11 @@ module gimli(
 
                    .init(init_reg),
                    .next(next_reg),
-                   .mode(mode_reg),
 
                    .block(core_block),
 
-                   .ready(core_ready),
-
-                   .new_block(core_new_block)
+                   .new_block(core_new_block),
+                   .ready(core_ready)
                   );
 
 
@@ -157,8 +150,7 @@ module gimli(
           init_reg         <= 0;
           next_reg         <= 0;
           ready_reg        <= 0;
-          new_block_reg    <= 383'h0;
-          digest_valid_reg <= 0;
+          new_block_reg    <= 384'h0;
         end
       else
         begin
@@ -180,8 +172,6 @@ module gimli(
     begin : api_logic
       init_new      = 0;
       next_new      = 0;
-      mode_new      = 0;
-      mode_we       = 0;
       block_we      = 0;
       tmp_read_data = 32'h0;
       tmp_error     = 0;
@@ -194,21 +184,19 @@ module gimli(
                 begin
                   init_new = write_data[CTRL_INIT_BIT];
                   next_new = write_data[CTRL_NEXT_BIT];
-                  mode_new = write_data[CTRL_MODE_BIT];
-                  mode_we  = 1;
                 end
 
-              if ((address >= ADDR_BLOCK0) && (address <= ADDR_BLOCK15))
+              if ((address >= ADDR_BLOCK0) && (address <= ADDR_BLOCK11))
                 block_we = 1;
             end // if (we)
 
           else
             begin
-              if ((address >= ADDR_BLOCK0) && (address <= ADDR_BLOCK15))
+              if ((address >= ADDR_BLOCK0) && (address <= ADDR_BLOCK11))
                 tmp_read_data = block_reg[address[3 : 0]];
 
               if ((address >= ADDR_NEW_BLOCK0) && (address <= ADDR_NEW_BLOCK11))
-                tmp_read_data = digest_reg[(7 - (address - ADDR_DIGEST0)) * 32 +: 32];
+                tmp_read_data = new_block_reg[(7 - (address - ADDR_NEW_BLOCK0)) * 32 +: 32];
 
               case (address)
                 // Read operations.
@@ -221,11 +209,8 @@ module gimli(
                 ADDR_VERSION:
                   tmp_read_data = CORE_VERSION;
 
-                ADDR_CTRL:
-                  tmp_read_data = {29'h0, mode_reg, next_reg, init_reg};
-
                 ADDR_STATUS:
-                  tmp_read_data = {31'h0, ready_reg};
+                  tmp_read_data[STATUS_READY_BIT] = ready_reg;
 
                 default:
                   begin

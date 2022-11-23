@@ -45,7 +45,6 @@ module gimli_core(
 
                    input wire            init,
                    input wire            next,
-                   input wire            mode,
 
                    input wire [383 : 0]  block,
 
@@ -59,6 +58,7 @@ module gimli_core(
   //----------------------------------------------------------------
   localparam CTRL_IDLE = 0;
   localparam CTRL_INIT = 1;
+  localparam CTRL_NEXT = 2;
   localparam CTRL_DONE = 15;
 
 
@@ -163,7 +163,7 @@ module gimli_core(
 
       block_new = block;
 
-      case (gimli_ctrl_ref)
+      case (gimli_ctrl_reg)
 	CTRL_IDLE: begin
 	  if (init) begin
 	    ready_new      = 1'h0;
@@ -171,10 +171,23 @@ module gimli_core(
 	    gimli_ctrl_new = CTRL_INIT;
 	    gimli_ctrl_we  = 1'h1;
 	  end
+	  else if (next) begin
+	    ready_new      = 1'h0;
+	    ready_we       = 1'h1;
+	    gimli_ctrl_new = CTRL_NEXT;
+	    gimli_ctrl_we  = 1'h1;
+	  end
 	end
 
 
 	CTRL_INIT: begin
+	  block_we       = 1'h1;
+	  gimli_ctrl_new = CTRL_DONE;
+	  gimli_ctrl_we  = 1'h1;
+	end
+
+
+	CTRL_NEXT: begin
 	  block_we       = 1'h1;
 	  gimli_ctrl_new = CTRL_DONE;
 	  gimli_ctrl_we  = 1'h1;
