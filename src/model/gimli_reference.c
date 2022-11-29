@@ -75,6 +75,23 @@ void print_state(uint32_t *state) {
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 void check_state(uint32_t *state, uint32_t *expected) {
+  int correct = 1;
+  for (int i = 0; i < 12 ; i++) {
+    if (state[i] != expected[i]) {
+	correct = 0;
+      }
+  }
+
+  if (correct) {
+    printf("Correct result generated.\n");
+  } else {
+    printf("Error: Correct result NOT generated.\n");
+    printf("Expected:\n");
+    print_state(expected);
+
+    printf("Got:\n");
+    print_state(state);
+  }
 }
 
 
@@ -95,9 +112,7 @@ void test1() {
     my_state[i] = 0x00000000;
   }
 
-  print_state(&my_state[0]);
   gimli(&my_state[0]);
-  print_state(&my_state[0]);
   check_state(my_state, my_expected);
 }
 
@@ -120,9 +135,7 @@ void test2() {
     my_state[i] = 0xffffffff;
   }
 
-  print_state(&my_state[0]);
   gimli(&my_state[0]);
-  print_state(&my_state[0]);
   check_state(my_state, my_expected);
 }
 
@@ -145,9 +158,7 @@ void test3() {
     my_state[i] = i;
   }
 
-  print_state(&my_state[0]);
   gimli(&my_state[0]);
-  print_state(&my_state[0]);
   check_state(my_state, my_expected);
 }
 
@@ -168,9 +179,7 @@ void test4() {
 
   printf("Test 3: Input vector from reference and paper.\n");
 
-  print_state(&my_state[0]);
   gimli(&my_state[0]);
-  print_state(&my_state[0]);
   check_state(my_state, my_expected);
 }
 
