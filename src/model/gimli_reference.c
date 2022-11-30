@@ -10,12 +10,27 @@
 #include <stdint.h>
 #include <stdio.h>
 
+//------------------------------------------------------------------
+//------------------------------------------------------------------
 uint32_t rotate(uint32_t x, int bits)
 {
-  if (bits == 0) return x;
-  return (x << bits) | (x >> (32 - bits));
+  uint32_t result;
+
+  if (bits == 0) {
+    result = x;
+  }
+  else {
+    result = (x << bits) | (x >> (32 - bits));
+  }
+
+  printf("rotate: 0x%08x rot %02d bits: 0x%08x\n", x, bits, result);
+
+  return result;
 }
 
+
+//------------------------------------------------------------------
+//------------------------------------------------------------------
 extern void gimli(uint32_t *state)
 {
   int round;
