@@ -114,6 +114,7 @@ void test1() {
 
   gimli(&my_state[0]);
   check_state(my_state, my_expected);
+  printf("Test 1: completed.\n\n");
 }
 
 
@@ -137,6 +138,7 @@ void test2() {
 
   gimli(&my_state[0]);
   check_state(my_state, my_expected);
+  printf("Test 2: completed.\n\n");
 }
 
 
@@ -160,6 +162,7 @@ void test3() {
 
   gimli(&my_state[0]);
   check_state(my_state, my_expected);
+  printf("Test 3: completed.\n\n");
 }
 
 
@@ -181,13 +184,14 @@ void test4() {
 
   gimli(&my_state[0]);
   check_state(my_state, my_expected);
+  printf("Test 4: completed.\n\n");
 }
 
 
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 int main(void) {
-  printf("Reference model started.\n");
+  printf("Reference model started.\n\n");
 
   test1();
   test2();
