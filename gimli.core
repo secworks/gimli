@@ -1,0 +1,46 @@
+CAPI=2:
+
+name : secworks:crypto:gimli
+
+filesets:
+  rtl:
+    files:
+      - src/rtl/gimli.v
+      - src/rtl/gimli_core.v
+    file_type : verilogSource
+
+  tb:
+    files:
+      - src/tb/tb_gimli.v
+      - src/tb/tb_gimli_core.v
+    file_type : verilogSource
+
+  sky130:
+    files:
+      - data/sky130.tcl
+
+targets:
+  default:
+    filesets: [rtl]
+
+  lint:
+    default_tool : verilator
+    filesets : [rtl]
+    tools:
+      verilator: {mode: lint-only}
+    toplevel: gimli
+
+  tb_gimli: &tb
+    default_tool: icarus
+    filesets: [rtl, tb]
+    toplevel : tb_gimli
+
+  tb_gimli_core:
+    default_tool: icarus
+    <<: *tb
+    toplevel : tb_gimli_core
+
+  sky130:
+    default_tool : openlane
+    filesets: [rtl, sky130]
+    toplevel : gimli
