@@ -12,6 +12,40 @@
 
 //------------------------------------------------------------------
 //------------------------------------------------------------------
+void print_state(uint32_t *state) {
+  printf("State:\n");
+  for (int i = 0; i < 12 ; i += 4) {
+    printf("0x%08x 0x%08x 0x%08x 0x%08x\n",
+	   state[(i + 0)], state[(i + 1)], state[(i + 2)], state[(i + 3)]);
+  }
+}
+
+
+//------------------------------------------------------------------
+//------------------------------------------------------------------
+void check_state(uint32_t *state, uint32_t *expected) {
+  int correct = 1;
+  for (int i = 0; i < 12 ; i++) {
+    if (state[i] != expected[i]) {
+	correct = 0;
+      }
+  }
+
+  if (correct) {
+    printf("Correct result generated.\n");
+  } else {
+    printf("Error: Correct result NOT generated.\n");
+    printf("Expected:\n");
+    print_state(expected);
+
+    printf("Got:\n");
+    print_state(state);
+  }
+}
+
+
+//------------------------------------------------------------------
+//------------------------------------------------------------------
 uint32_t rotate(uint32_t x, int bits)
 {
   uint32_t result;
@@ -43,16 +77,28 @@ extern void gimli(uint32_t *state)
   {
     for (column = 0; column < 4; ++column)
     {
+      printf("\n");
+      printf("round: %02d, column: %02d\n", round, column);
+      printf("State before update:\n");
+      print_state(state);
+      printf("x: 0x%08x, y: 0x%08x, z: 0x%08x\n", x, y, z);
+      printf("\n");
+
+      printf("Rotate and movement.\n");
       x = rotate(state[    column], 24);
       y = rotate(state[4 + column],  9);
       z =        state[8 + column];
+      printf("x: 0x%08x, y: 0x%08x, z: 0x%08x\n", x, y, z);
 
       state[8 + column] = x ^ (z << 1) ^ ((y&z) << 2);
       state[4 + column] = y ^ x        ^ ((x|z) << 1);
       state[column]     = z ^ y        ^ ((x&y) << 3);
+      print_state(state);
+      printf("Rotate and movement done.\n");
     }
 
     if ((round & 3) == 0) { // small swap: pattern s...s...s... etc.
+      printf("Small swap.\n");
       x = state[0];
       state[0] = state[1];
       state[1] = x;
@@ -61,6 +107,7 @@ extern void gimli(uint32_t *state)
       state[3] = x;
     }
     if ((round & 3) == 2) { // big swap: pattern ..S...S...S. etc.
+      printf("Small swap.\n");
       x = state[0];
       state[0] = state[2];
       state[2] = x;
@@ -70,42 +117,9 @@ extern void gimli(uint32_t *state)
     }
 
     if ((round & 3) == 0) { // add constant: pattern c...c...c... etc.
+      printf("Add constant.\n");
       state[0] ^= (0x9e377900 | round);
     }
-  }
-}
-
-//------------------------------------------------------------------
-//------------------------------------------------------------------
-void print_state(uint32_t *state) {
-  printf("State:\n");
-  for (int i = 0; i < 12 ; i += 4) {
-    printf("0x%08x 0x%08x 0x%08x 0x%08x\n",
-	   state[(i + 0)], state[(i + 1)], state[(i + 2)], state[(i + 3)]);
-  }
-  printf("\n");
-}
-
-
-//------------------------------------------------------------------
-//------------------------------------------------------------------
-void check_state(uint32_t *state, uint32_t *expected) {
-  int correct = 1;
-  for (int i = 0; i < 12 ; i++) {
-    if (state[i] != expected[i]) {
-	correct = 0;
-      }
-  }
-
-  if (correct) {
-    printf("Correct result generated.\n");
-  } else {
-    printf("Error: Correct result NOT generated.\n");
-    printf("Expected:\n");
-    print_state(expected);
-
-    printf("Got:\n");
-    print_state(state);
   }
 }
 
