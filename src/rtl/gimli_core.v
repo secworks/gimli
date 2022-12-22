@@ -56,10 +56,13 @@ module gimli_core(
   //----------------------------------------------------------------
   // Internal constant and parameter definitions.
   //----------------------------------------------------------------
-  localparam CTRL_IDLE = 0;
-  localparam CTRL_INIT = 1;
-  localparam CTRL_NEXT = 2;
-  localparam CTRL_DONE = 15;
+  localparam CTRL_IDLE   = 0;
+  localparam CTRL_INIT   = 1;
+  localparam CTRL_NEXT   = 2;
+  localparam CTRL_ROUNDS = 2;
+  localparam CTRL_DONE   = 15;
+
+  localparam NUM_ROUNDS = 5'd24;
 
 
   //----------------------------------------------------------------
@@ -71,8 +74,9 @@ module gimli_core(
 
   reg [4 : 0] round_ctr_reg;
   reg [4 : 0] round_ctr_new;
-  reg         round_ctr_inc;
-  reg         round_ctr_rst;
+  reg         round_ctr_dec;
+  reg         round_ctr_set;
+  reg         round_ctr_zero;
   reg         round_ctr_we;
 
   reg         ready_reg;
@@ -136,13 +140,19 @@ module gimli_core(
       round_ctr_new = 5'h0;
       round_ctr_we  = 1'h0;
 
-      if (round_ctr_inc) begin
-	round_ctr_new = round_ctr_reg + 1'h1;
+      if (round_ctr_reg == 5'h0) begin
+	round_ctr_zero = 1'h1;
+      end else begin
+	round_ctr_zero = 1'h0;
+      end
+
+      if (round_ctr_dec) begin
+	round_ctr_new = round_ctr_reg - 1'h1;
 	round_ctr_we  = 1'h1;
       end
 
-      else if (round_ctr_rst) begin
-	round_ctr_new = 5'h0;
+      else if (round_ctr_set) begin
+	round_ctr_new = NUM_ROUNDS;
 	round_ctr_we  = 1'h1;
       end
     end
@@ -156,8 +166,8 @@ module gimli_core(
       ready_new      = 1'h0;
       ready_we       = 1'h0;
       block_we       = 1'h0;
-      round_ctr_inc  = 1'h0;
-      round_ctr_rst  = 1'h0;
+      round_ctr_dec  = 1'h0;
+      round_ctr_set  = 1'h0;
       gimli_ctrl_new = CTRL_IDLE;
       gimli_ctrl_we  = 1'h0;
 
@@ -182,15 +192,27 @@ module gimli_core(
 
 	CTRL_INIT: begin
 	  block_we       = 1'h1;
-	  gimli_ctrl_new = CTRL_DONE;
+	  round_ctr_set  = 1'h1;
+	  gimli_ctrl_new = CTRL_ROUNDS;
 	  gimli_ctrl_we  = 1'h1;
 	end
 
 
 	CTRL_NEXT: begin
 	  block_we       = 1'h1;
-	  gimli_ctrl_new = CTRL_DONE;
+	  round_ctr_set  = 1'h1;
+	  gimli_ctrl_new = CTRL_ROUNDS;
 	  gimli_ctrl_we  = 1'h1;
+	end
+
+
+	CTRL_ROUNDS: begin
+	  if (round_ctr_zero) begin
+	    gimli_ctrl_new = CTRL_DONE;
+	    gimli_ctrl_we  = 1'h1;
+	  end else begin
+	    round_ctr_dec  = 1'h1;
+	  end
 	end
 
 
